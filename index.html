@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Science Club Weekly Time Allocation</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+    .bar {
+      cursor: pointer;
+    }
+    .bar:hover {
+      opacity: 0.8;
+    }
+    .axis-label {
+      font-size: 12px;
+    }
+    .tooltip {
+      position: absolute;
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      background: lightsteelblue;
+      border: 1px solid #999;
+      pointer-events: none;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Weekly Time Allocation for Science Club Activities</h2>
+  <svg width="800" height="500"></svg>
+  <div class="tooltip"></div>
+  <script>
+    const data = [
+      { week: "Week 1", plan: 6, sessions: 0, feedback: 0 },
+      { week: "Week 2", plan: 5, sessions: 1, feedback: 0 },
+      { week: "Week 3", plan: 3, sessions: 2, feedback: 1 },
+      { week: "Week 4", plan: 1, sessions: 3, feedback: 2 },
+      { week: "Week 5", plan: 0, sessions: 5, feedback: 3 },
+      { week: "Week 6", plan: 0, sessions: 4, feedback: 4 }
+    ];
+
+    const margin = { top: 30, right: 20, bottom: 60, left: 50 };
+    const width = 800 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
+
+    const svg = d3.select("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const tooltip = d3.select(".tooltip");
+
+    const x0 = d3.scaleBand()
+      .domain(data.map(d => d.week))
+      .range([0, width])
+      .paddingInner(0.2);
+
+    const x1 = d3.scaleBand()
+      .domain(["plan", "sessions", "feedback"])
+      .range([0, x0.bandwidth()])
+      .padding(0.05);
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => Math.max(d.plan, d.sessions, d.feedback)) + 1])
+      .nice()
+      .range([height, 0]);
+
+    const color = d3.scaleOrdinal()
+      .domain(["plan", "sessions", "feedback"])
+      .range(["#1f77b4", "#ff7f0e", "#2ca02c"]);
+
+    svg.append("g")
+      .selectAll("g")
+      .data(data)
+      .join("g")
+      .attr("transform", d => `translate(${x0(d.week)},0)`)
+      .selectAll("rect")
+      .data(d => [
+        { key: "plan", value: d.plan },
+        { key: "sessions", value: d.sessions },
+        { key: "feedback", value: d.feedback }
+      ])
+      .join("rect")
+      .attr("x", d => x1(d.key))
+      .attr("y", d => y(d.value))
+      .attr("width", x1.bandwidth())
+      .attr("height", d => height - y(d.value))
+      .attr("fill", d => color(d.key))
+      .attr("class", "bar")
+      .on("mouseover", (event, d) => {
+        tooltip.style("opacity", 1)
+               .html(`<strong>${d.key}</strong>: ${d.value} hrs`)
+               .style("left", (event.pageX + 10) + "px")
+               .style("top", (event.pageY - 28) + "px");
+      })
+      .on("mousemove", event => {
+        tooltip.style("left", (event.pageX + 10) + "px")
+               .style("top", (event.pageY - 28) + "px");
+      })
+      .on("mouseout", () => {
+        tooltip.style("opacity", 0);
+      });
+
+    svg.append("g")
+      .attr("class", "x-axis")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x0))
+      .selectAll("text")
+      .attr("transform", "rotate(-40)")
+      .style("text-anchor", "end");
+
+    svg.append("g")
+      .attr("class", "y-axis")
+      .call(d3.axisLeft(y));
+
+    // Legend
+    const legend = svg.append("g")
+      .attr("transform", `translate(${width - 120}, 0)`);
+
+    ["plan", "sessions", "feedback"].forEach((key, i) => {
+      const g = legend.append("g").attr("transform", `translate(0, ${i * 20})`);
+      g.append("rect")
+        .attr("x", 0)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", color(key));
+
+      g.append("text")
+        .attr("x", 20)
+        .attr("y", 12)
+        .text(key.charAt(0).toUpperCase() + key.slice(1))
+        .attr("class", "axis-label");
+    });
+  </script>
+</body>
+</html>

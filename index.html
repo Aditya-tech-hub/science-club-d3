@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Science Club Action-Target Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .link { stroke: #ccc; stroke-width: 2px; }
+    .node circle { fill: #69b3a2; stroke: #333; stroke-width: 1.5px; }
+    .node text { font-size: 14px; pointer-events: none; fill: #000; }
+    .tooltip {
+      position: absolute;
+      text-align: center;
+      padding: 6px;
+      font-size: 12px;
+      background: #fff;
+      border: 1px solid #ccc;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Science Club Project: Action-Target Network</h2>
+  <svg width="800" height="600"></svg>
+  <script>
+    const data = {
+      nodes: [
+        { id: "Draft & Pitch Plan" },
+        { id: "Gain Approval" },
+        { id: "Organize Weekly Sessions" },
+        { id: "Develop Project" },
+        { id: "Reach Out to Mentors" },
+        { id: "Strengthen Strategy" }
+      ],
+      links: [
+        { source: "Draft & Pitch Plan", target: "Gain Approval" },
+        { source: "Organize Weekly Sessions", target: "Develop Project" },
+        { source: "Reach Out to Mentors", target: "Strengthen Strategy" }
+      ]
+    };
+
+    const svg = d3.select("svg");
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+
+    const tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+
+    const simulation = d3.forceSimulation(data.nodes)
+      .force("link", d3.forceLink(data.links).id(d => d.id).distance(200))
+      .force("charge", d3.forceManyBody().strength(-400))
+      .force("center", d3.forceCenter(width / 2, height / 2));
+
+    const link = svg.append("g")
+      .selectAll("line")
+      .data(data.links)
+      .join("line")
+      .attr("class", "link");
+
+    const node = svg.append("g")
+      .selectAll("g")
+      .data(data.nodes)
+      .join("g")
+      .attr("class", "node")
+      .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended));
+
+    node.append("circle")
+      .attr("r", 20)
+      .on("mouseover", (event, d) => {
+        tooltip.transition().duration(200).style("opacity", .9);
+        tooltip.html(d.id)
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 20) + "px");
+      })
+      .on("mouseout", () => tooltip.transition().duration(500).style("opacity", 0));
+
+    node.append("text")
+      .attr("dy", 4)
+      .attr("text-anchor", "middle")
+      .text(d => d.id);
+
+    simulation.on("tick", () => {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      node
+        .attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+  </script>
+</body>
+</html>
